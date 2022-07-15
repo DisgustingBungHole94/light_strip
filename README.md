@@ -9,13 +9,9 @@ LightStrip is a program built with [libhomecontroller](https://github.com/Disgus
 Make sure you have G++, Clang, Node.js, npm, and npx installed.
 
 ```sh
-git clone https://github.com/DisgustingBungHole94/light_strip.git
+git clone https://github.com/DisgustingBungHole94/light_strip.git --recursive
 
-cd light_strip
-
-git submodule update --init --recursive
-
-make
+cd light_strip && make
 ```
 
 This will automatically compile all dependencies as well.
