@@ -1,0 +1,19 @@
+Commands
+========
+
+0x00: Return current color (returns 3 bytes)
+0x01: Update color
+0x02: Update speed (speed must be sent in 2 bytes)
+0x03: Start program
+0x04: Stop program
+0x05: Interrupt program
+
+Response Codes
+==============
+
+0x00: Success
+0x01: Unknown command
+0x02: Command arguments missing
+0x03: Speed not in range
+0x04: Unknown program
+0x05: No program running

@@ -1,0 +1,3 @@
+[submodule "libhomecontroller"]
+	path = libhomecontroller
+	url = https://github.com/DisgustingBungHole94/libhomecontroller
