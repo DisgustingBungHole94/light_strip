@@ -13,7 +13,7 @@ LightStrip::~LightStrip() {}
 
 bool LightStrip::start() {
      try {
-        if (!PWM::init("pwm-test")) {
+        if (!PWM::init("/dev/pi-blaster")) {
             console::csh("Failed to start PWM!");
             return false;
         }
