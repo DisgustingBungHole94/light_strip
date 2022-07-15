@@ -1,7 +1,6 @@
 SRCDIR=src
 
-IDIRS = -I./libhomecontroller/include
-
+IDIRS = -I./libhomecontroller/include -I./libhomecontroller/llhttp/build -I./libhomecontroller/rapidjson/include
 LDIR = lib
 
 CXX=g++
@@ -10,7 +9,7 @@ CXXFLAGS=-g $(IDIRS) -L$(LDIR) -Wl,-rpath,./$(LDIR)
 TARGET=bin/light_strip
 ODIR=bin/obj
 
-LIBS=-lhomecontroller -pthread -lssl -lllhttp
+LIBS=-lhomecontroller -pthread -lssl
 
 _DEPS =	lightstrip.h console.h pwm.h program_manager.h programs/program.h programs/rainbow_fade_program.h programs/rave_program.h
 DEPS = $(patsubst %,$(SRCDIR)/%,$(_DEPS))
