@@ -12,5 +12,3 @@ Make sure you have [libhomecontroller](https://github.com/DisgustingBungHole94/l
 git clone https://github.com/DisgustingBungHole94/light_strip.git
 cd light_strip && make
 ```
-
-This will automatically compile all dependencies as well.
