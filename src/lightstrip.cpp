@@ -13,7 +13,7 @@ LightStrip::~LightStrip() {}
 
 bool LightStrip::start() {
      try {
-        if (!PWM::init("/dev/pi-blaster")) {
+        if (!PWM::init("pwm-test")) {
             console::csh("Failed to start PWM!");
             return false;
         }
@@ -53,7 +53,9 @@ bool LightStrip::start() {
 void LightStrip::cleanup() {
     m_running = false;
 
-    m_updateColorThread.join();
+    if (m_updateColorThread.joinable()) {
+        m_updateColorThread.join();
+    }
 
     stop();
     PWM::stop();

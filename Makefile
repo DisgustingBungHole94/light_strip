@@ -1,45 +1,56 @@
-SRCDIR=src
+SRCDIR = src
+STRUCTURE = $(shell cd $(SRCDIR) && find . -type d)
 
-IDIRS = -I./libhomecontroller/include -I./libhomecontroller/llhttp/build -I./libhomecontroller/rapidjson/include
-LDIR = lib
+CXX ?= g++
+CXXFLAGS ?= -g $(INCLUDES)
 
-CXX=g++
-CXXFLAGS=-g $(IDIRS) -L$(LDIR) -Wl,-rpath,./$(LDIR)
+BINARYDIR = bin
+OBJECTDIR = $(BINARYDIR)/obj
 
-TARGET=bin/light_strip
-ODIR=bin/obj
+TARGET = $(BINARYDIR)/light_strip
 
-LIBS=-lhomecontroller -pthread -lssl
+LIBS += -lhomecontroller
+LIBS += -lpthread
 
-_DEPS =	lightstrip.h console.h pwm.h program_manager.h programs/program.h programs/rainbow_fade_program.h programs/rave_program.h
-DEPS = $(patsubst %,$(SRCDIR)/%,$(_DEPS))
+# src root
+_OBJECTS += console.o
+_HEADERS += console.h
 
-_OBJ = main.o lightstrip.o console.o pwm.o program_manager.o programs/program.o programs/rainbow_fade_program.o programs/rave_program.o
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+_OBJECTS += lightstrip.o
+_HEADERS += lightstrip.h
 
-$(ODIR)/%.o: $(SRCDIR)/%.cpp $(DEPS) | bin
+_OBJECTS += main.o
+
+_OBJECTS += program_manager.o
+_HEADERS += program_manager.h
+
+_OBJECTS += pwm.o
+_HEADERS += pwm.h
+
+# programs
+_OBJECTS += programs/program.o
+_HEADERS += programs/program.h
+
+_OBJECTS += programs/rainbow_fade_program.o
+_HEADERS += programs/rainbow_fade_program.h
+
+_OBJECTS += programs/rave_program.o
+_HEADERS += programs/rave_program.h
+
+OBJECTS = $(patsubst %,$(OBJECTDIR)/%,$(_OBJECTS))
+HEADERS = $(patsubst %,$(SRCDIR)/%,$(_HEADERS))
+
+$(OBJECTDIR)/%.o: $(SRCDIR)/%.cpp $(HEADERS) | $(OBJECTDIR)
 	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
-$(TARGET): libhomecontroller/bin/libhomecontroller.so $(OBJ)
+$(TARGET): $(OBJECTS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
-bin:
-	mkdir $@
-	mkdir $@/obj
-	mkdir $@/obj/programs
-
-libhomecontroller/bin/libhomecontroller.so:
-	cd libhomecontroller && make
-	mkdir lib
-	cd lib && ln -s ../libhomecontroller/bin/libhomecontroller.so libhomecontroller.so
-
-.PHONY: clean
+$(OBJECTDIR):
+	mkdir -p $(OBJECTDIR)
+	mkdir -p $(addprefix $(OBJECTDIR)/,$(STRUCTURE))
 
 clean:
-	find $(ODIR) -type f -name '*.o' -delete
-	rm -f $(TARGET)
+	rm -rf bin
 
-cleanall:
-	rm -r bin
-	rm -r lib
-	cd libhomecontroller && make cleanall
+.PHONY: clean
