@@ -6,11 +6,10 @@ LightStrip is a program built with [libhomecontroller](https://github.com/Disgus
 
 ## Build Instructions
 
-Make sure you have G++, Clang, Node.js, npm, and npx installed.
+Make sure you have [libhomecontroller](https://github.com/DisgustingBungHole94/libhomecontroller) installed.
 
 ```sh
-git clone https://github.com/DisgustingBungHole94/light_strip.git --recursive
-
+git clone https://github.com/DisgustingBungHole94/light_strip.git
 cd light_strip && make
 ```
 
