@@ -1,3 +1,4 @@
 bin
-lib
 spec.txt
+.vscode
+pwm-test
