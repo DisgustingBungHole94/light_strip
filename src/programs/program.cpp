@@ -4,37 +4,31 @@
 
 #include <iostream>
 
-Program::Program() 
-    : m_status(ProgramStatus::STOPPED), m_speed(1.0f)
-{}
+void program::run() {
+    m_status = program_status::RUNNING;
 
-Program::~Program() {}
-
-void Program::run() {
-    m_status = ProgramStatus::RUNNING;
-
-    while(m_status != ProgramStatus::STOPPED) {
-        if (m_status == ProgramStatus::INTERRUPT) {
-            onInterrupt();
-            m_status = ProgramStatus::RUNNING;
+    while(m_status != program_status::STOPPED) {
+        if (m_status == program_status::INTERRUPT) {
+            on_interrupt();
+            m_status = program_status::RUNNING;
         }
 
         loop();
     }
 
-    onStop();
+    on_stop();
 }
 
-void Program::interrupt(const std::vector<uint8_t>& data) {
-    m_status = ProgramStatus::INTERRUPT;
-    m_interruptData = data;
+void program::interrupt(const std::vector<uint8_t>& data) {
+    m_status = program_status::INTERRUPT;
+    m_interrupt_data = data;
 }
 
-void Program::stop() {
-    m_status = ProgramStatus::STOPPED;
-    m_device->writePWM(0, 0, 0);
+void program::stop() {
+    m_status = program_status::STOPPED;
+    m_light_strip->write_pwm(0, 0, 0);
 }
 
-void Program::loop() {}
-void Program::onInterrupt() {}
-void Program::onStop() {}
+void program::loop() {}
+void program::on_interrupt() {}
+void program::on_stop() {}

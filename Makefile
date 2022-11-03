@@ -9,20 +9,16 @@ OBJECTDIR = $(BINARYDIR)/obj
 
 TARGET = $(BINARYDIR)/light_strip
 
-LIBS += -lhomecontroller
+LIBS += -lllhttp
 LIBS += -lpthread
+LIBS += -lssl
+LIBS += -lhomecontroller
 
 # src root
-_OBJECTS += console.o
-_HEADERS += console.h
-
 _OBJECTS += lightstrip.o
 _HEADERS += lightstrip.h
 
 _OBJECTS += main.o
-
-_OBJECTS += program_manager.o
-_HEADERS += program_manager.h
 
 _OBJECTS += pwm.o
 _HEADERS += pwm.h

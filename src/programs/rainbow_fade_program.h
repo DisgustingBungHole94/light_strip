@@ -4,23 +4,30 @@
 
 #include <vector>
 
-class RainbowFadeProgram : public Program {
+class rainbow_fade_program : public program {
     public:
-        RainbowFadeProgram();
-        ~RainbowFadeProgram();
+        rainbow_fade_program(light_strip* light_strip)
+            : program(light_strip, "Rainbow Fade", "Fade between several different colors.") ,
+            m_r(0),
+            m_g(0),
+            m_b(0),
+            m_color_status(color_status::RED)
+        {}
+
+        ~rainbow_fade_program() {}
 
         virtual void loop();
-        virtual void onInterrupt();
-        virtual void onStop();
+        virtual void on_interrupt();
+        virtual void on_stop();
 
     private:
         int m_r;
         int m_b;
         int m_g;
 
-        bool setColor(int r, int g, int b);
+        bool set_color(int r, int g, int b);
 
-        enum class ColorStatus {
+        enum class color_status {
             RED,
             ORANGE,
             YELLOW,
@@ -28,7 +35,5 @@ class RainbowFadeProgram : public Program {
             CYAN,
             BLUE,
             PURPLE
-        };
-
-        ColorStatus m_colorStatus;
+        } m_color_status;
 };

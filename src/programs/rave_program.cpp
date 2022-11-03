@@ -6,72 +6,65 @@
 #include <thread>
 #include <chrono>
 
-RaveProgram::RaveProgram()
-    : m_colorStatus(ColorStatus::RED)
-{}
-
-RaveProgram::~RaveProgram() {}
-
-void RaveProgram::loop() {
+void rave_program::loop() {
     int r, g, b;
 
-    switch(m_colorStatus) {
-        case ColorStatus::RED:
+    switch(m_color_status) {
+        case color_status::RED:
             r = 255;
             g = 0;
             b = 0;
-            m_colorStatus = ColorStatus::ORANGE;
+            m_color_status = color_status::ORANGE;
             break;
-        case ColorStatus::ORANGE:
+        case color_status::ORANGE:
             r = 255;
             g = 69;
             b = 0;
-            m_colorStatus = ColorStatus::YELLOW;
+            m_color_status = color_status::YELLOW;
             break;
-        case ColorStatus::YELLOW:
+        case color_status::YELLOW:
             r = 255;
             g = 255;
             b = 0;
-            m_colorStatus = ColorStatus::GREEN;
+            m_color_status = color_status::GREEN;
             break;
-        case ColorStatus::GREEN:
+        case color_status::GREEN:
             r = 0;
             g = 255;
             b = 0;
-            m_colorStatus = ColorStatus::BLUE;
+            m_color_status = color_status::BLUE;
             break;
-        case ColorStatus::BLUE:
+        case color_status::BLUE:
             r = 0;
             g = 0;
             b = 255;
-            m_colorStatus = ColorStatus::INDIGO;
+            m_color_status = color_status::INDIGO;
             break;
-        case ColorStatus::INDIGO:
+        case color_status::INDIGO:
             r = 75;
             g = 0;
             b = 130;
-            m_colorStatus = ColorStatus::WHITE;
+            m_color_status = color_status::WHITE;
             break;
-        case ColorStatus::WHITE:
+        case color_status::WHITE:
             r = 255;
             g = 255;
             b = 255;
-            m_colorStatus = ColorStatus::RED;
+            m_color_status = color_status::RED;
             break;
         default:
             r = 0;
             g = 0;
             b = 0;
-            m_colorStatus = ColorStatus::RED;
+            m_color_status = color_status::RED;
             break;
     }
 
     int delay = static_cast<int>(300 * (1 / m_speed));
     std::this_thread::sleep_for(std::chrono::milliseconds(delay));
 
-    m_device->writePWM(r, g, b);
+    m_light_strip->write_pwm(r, g, b);
 }
 
-void RaveProgram::onInterrupt() {}
-
-void RaveProgram::onStop() {}
+void rave_program::on_interrupt() {}
+void rave_program::on_stop() {}

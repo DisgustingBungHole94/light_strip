@@ -4,17 +4,21 @@
 
 #include <vector>
 
-class RaveProgram : public Program {
+class rave_program : public program {
     public:
-        RaveProgram();
-        ~RaveProgram();
+        rave_program(light_strip* light_strip) 
+            : program(light_strip, "Rave", "Flash quickly between several colors."),
+            m_color_status(color_status::RED)
+        {}
+
+        ~rave_program() {}
 
         virtual void loop();
-        virtual void onInterrupt();
-        virtual void onStop();
+        virtual void on_interrupt();
+        virtual void on_stop();
 
     private:
-        enum class ColorStatus {
+        enum class color_status {
             RED,
             ORANGE,
             YELLOW,
@@ -22,7 +26,5 @@ class RaveProgram : public Program {
             BLUE,
             INDIGO,
             WHITE
-        };
-
-        ColorStatus m_colorStatus;
+        } m_color_status;
 };

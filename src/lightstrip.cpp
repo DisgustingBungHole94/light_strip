@@ -1,78 +1,93 @@
 #include "lightstrip.h"
 
-#include <homecontroller/exception.h>
-#include <iostream>
+#include <homecontroller/net/endpoints.h>
+#include <homecontroller/util/logger.h>
+#include <homecontroller/exception/exception.h>
 
-#include "console.h"
+#include <iostream>
+#include <unordered_map>
+#include <functional>
+
 #include "pwm.h"
 
-LightStrip::LightStrip()
-    : m_realR(0.0f), m_realG(0.0f), m_realB(0.0f)
-{}
-LightStrip::~LightStrip() {}
+#include "programs/rainbow_fade_program.h"
+#include "programs/rave_program.h"
 
-bool LightStrip::start() {
+bool light_strip::start() {
      try {
         if (!PWM::init("pwm-test")) {
-            console::csh("Failed to start PWM!");
+            hc::util::logger::csh("failed to start PWM");
             return false;
         }
-        PWM::resetPins();
-        console::log("PWM started.");
 
-        ProgramManager::init(this);
+        PWM::reset_pins();
 
-        console::log("Login required!");
-        std::string username = console::input("Username: ");
-        std::string password = console::input("Password: ");
+        hc::util::logger::log("PWM started.");
 
-        init();
-        console::log("Initialized device services.");
+        hc::util::logger::log("login required...");
+        std::string username = hc::util::logger::input("username: ");
+        std::string password = hc::util::logger::input("password: ");
 
-        login(username, password);
-        console::log("Logged in.");
-        
-        std::string id = "baaaaaaaaaaaaaaaaaaaaaaaaaaaaaab";
-        //std::string id = device.registerDevice("Test", "light_strip");
-        console::log("Using device ID: " + id);
+        m_api.connect();
 
-        console::log("Starting device loop!");
+        m_api.login(username, password);
+        m_api.register_device("Josh's Lights", "light_strip");
+    } catch(hc::exception& e) {
+        m_api.disconnect();
 
-        m_updateColorThread = std::thread([this]{ updateColor(); });
-
-        setId(id);
-        run();
-    } catch(hc::Exception& e) {
-        console::csh("Error: " + e.what());
+        hc::util::logger::csh("error: " + std::string(e.what()) + " (" + std::string(e.func()) + ")");
         return false;
     }
+
+    m_running = true;
+
+    std::thread color_update_thread( [this]() { update_color(); } );
+
+    loop();
+
+    color_update_thread.join();
 
     return true;
 }
 
-void LightStrip::cleanup() {
+void light_strip::shutdown() {
+    hc::util::logger::log("shutting down...");
+
     m_running = false;
 
-    if (m_updateColorThread.joinable()) {
-        m_updateColorThread.join();
-    }
+    m_api.disconnect();
 
-    stop();
     PWM::stop();
 
-    if (m_info.m_programRunning) {
-        stopProgram();
+    if (m_info.m_program_running) {
+        stop_program();
     }
 }
 
-std::vector<uint8_t> LightStrip::onMessage(const std::vector<uint8_t>& msg) {
-    std::vector<uint8_t> response;
+void light_strip::loop() {
+    while(m_running) {
+        try {
+            std::string data = m_api.get_conn_ptr()->recv();
+            if (m_api.get_conn_ptr()->closed()) {
+                hc::util::logger::err("socket closed");
+                shutdown();
+                break;
+            }
 
-    switch(msg[0]) {
+            hc::util::logger::log("received: " + data);
+        } catch(hc::exception& e) {
+            if (m_running) {
+                hc::util::logger::csh("error: " + std::string(e.what()));
+                shutdown();
+            }
+        }
+    }
+
+    /*switch(msg[0]) {
         case 0x00:
-            response.push_back(m_realR);
-            response.push_back(m_realG);
-            response.push_back(m_realB);
+            response.push_back(m_real_r);
+            response.push_back(m_real_g);
+            response.push_back(m_real_b);
             break;
         case 0x01:
             if (msg.size() < 4) {
@@ -112,65 +127,65 @@ std::vector<uint8_t> LightStrip::onMessage(const std::vector<uint8_t>& msg) {
             break;
     }
 
-    return response;
+    return response;*/
 }
 
-void LightStrip::writePWM(uint8_t r, uint8_t g, uint8_t b) {
-    PWM::analogWrite(PWM::PWM_PIN_R, r / 255.0f);
-    PWM::analogWrite(PWM::PWM_PIN_G, g / 255.0f);
-    PWM::analogWrite(PWM::PWM_PIN_B, b / 255.0f);
+void light_strip::write_pwm(uint8_t r, uint8_t g, uint8_t b) {
+    PWM::analog_write(PWM::PWM_PIN_R, r / 255.0f);
+    PWM::analog_write(PWM::PWM_PIN_G, g / 255.0f);
+    PWM::analog_write(PWM::PWM_PIN_B, b / 255.0f);
 
-    m_realR = r;
-    m_realG = g;
-    m_realB = b;
+    m_real_r = r;
+    m_real_g = g;
+    m_real_b = b;
 }
 
-void LightStrip::updateColor() {
+void light_strip::update_color() {
     while(m_running) {
-        if (!m_info.m_programRunning) {
-            if (m_realR == m_info.m_r && m_realG == m_info.m_g && m_realB == m_info.m_b) {
+        if (!m_info.m_program_running) {
+            if (m_real_r == m_info.m_r && m_real_g == m_info.m_g && m_real_b == m_info.m_b) {
                 continue;
             }
 
-            if (m_realR < m_info.m_r) {
-                m_realR += 10;
-                if (m_realR > m_info.m_r) m_realR = m_info.m_r;
+            if (m_real_r < m_info.m_r) {
+                m_real_r += 10;
+                if (m_real_r > m_info.m_r) m_real_r = m_info.m_r;
             }
-            if (m_realR > m_info.m_r) {
-                m_realR -= 10;
-                if (m_realR < m_info.m_r) m_realR = m_info.m_r;
-            }
-            
-            if (m_realG < m_info.m_g) {
-                m_realG += 10;
-                if (m_realG > m_info.m_g) m_realG = m_info.m_g;
-            }
-            if (m_realG > m_info.m_g) {
-                m_realG -= 10;
-                if (m_realG < m_info.m_g) m_realG = m_info.m_g;
+            if (m_real_r > m_info.m_r) {
+                m_real_r -= 10;
+                if (m_real_r < m_info.m_r) m_real_r = m_info.m_r;
             }
             
-            if (m_realB < m_info.m_b) {
-                m_realB += 10;
-                if (m_realB > m_info.m_b) m_realB = m_info.m_b;
+            if (m_real_g < m_info.m_g) {
+                m_real_g += 10;
+                if (m_real_g > m_info.m_g) m_real_g = m_info.m_g;
             }
-            if (m_realB > m_info.m_b) {
-                m_realB -= 10;
-                if (m_realB < m_info.m_b) m_realB = m_info.m_b;
+            if (m_real_g > m_info.m_g) {
+                m_real_g -= 10;
+                if (m_real_g < m_info.m_g) m_real_g = m_info.m_g;
+            }
+            
+            if (m_real_b < m_info.m_b) {
+                m_real_b += 10;
+                if (m_real_b > m_info.m_b) m_real_b = m_info.m_b;
+            }
+            if (m_real_b > m_info.m_b) {
+                m_real_b -= 10;
+                if (m_real_b < m_info.m_b) m_real_b = m_info.m_b;
             }
 
-            PWM::analogWrite(PWM::PWM_PIN_R, m_realR / 255.0f);
-            PWM::analogWrite(PWM::PWM_PIN_G, m_realG / 255.0f);
-            PWM::analogWrite(PWM::PWM_PIN_B, m_realB / 255.0f);
+            PWM::analog_write(PWM::PWM_PIN_R, m_real_r / 255.0f);
+            PWM::analog_write(PWM::PWM_PIN_G, m_real_g / 255.0f);
+            PWM::analog_write(PWM::PWM_PIN_B, m_real_b / 255.0f);
 
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 }
 
-uint8_t LightStrip::setColor(uint8_t r, uint8_t g, uint8_t b) {
-    if (m_info.m_programRunning) {
-        stopProgram();
+uint8_t light_strip::set_color(uint8_t r, uint8_t g, uint8_t b) {
+    if (m_info.m_program_running) {
+        stop_program();
     }
 
     m_info.m_r = r;
@@ -178,78 +193,87 @@ uint8_t LightStrip::setColor(uint8_t r, uint8_t g, uint8_t b) {
     m_info.m_b = b;
 
     std::string colorStr = std::to_string(r) + " " + std::to_string(g) + " " + std::to_string(b);
-    console::log("Color updated: " + colorStr);
+    hc::util::logger::log("color updated: " + colorStr);
 
     return 0x00;
 }
 
-uint8_t LightStrip::setSpeed(int speed) {
+uint8_t light_strip::set_speed(int speed) {
     if (speed < 25 || speed > 400) {
         return 0x03;
     }
 
     m_info.m_speed = speed / 100.0f;
 
-    if (m_info.m_programRunning) {
-        m_info.m_program->setSpeed(m_info.m_speed);
+    if (m_info.m_program_running) {
+        m_info.m_program->set_speed(m_info.m_speed);
     }
 
-    console::log("Speed updated: " + std::to_string(speed) + "%");
+    hc::util::logger::log("speed updated: " + std::to_string(speed) + "%");
 
     return 0x00;
 }
 
-uint8_t LightStrip::startProgram(uint8_t id) {
-    std::unique_ptr<Program> program = ProgramManager::getProgram(id);
-    if (program == nullptr) {
+uint8_t light_strip::start_program(uint8_t id) {
+    static const std::unordered_map<uint8_t, std::function<program*()>> programs = {
+        { 0x00, [this]() { return new rainbow_fade_program(this); } },
+        { 0x01, [this]() { return new rave_program(this); } }
+    };
+
+    std::unique_ptr<program> program_ptr = nullptr;
+
+    auto mit = programs.find(id);
+    if (mit == programs.end()) {
         return 0x04;
     }
 
-    if (m_info.m_programRunning) {
-        stopProgram();
+    program_ptr.reset(mit->second());
+
+    if (m_info.m_program_running) {
+        stop_program();
     }
 
-    m_info.m_program = std::move(program);
-    m_info.m_program->setSpeed(m_info.m_speed);
+    m_info.m_program = std::move(program_ptr);
+    m_info.m_program->set_speed(m_info.m_speed);
 
-    PWM::resetPins();
+    PWM::reset_pins();
 
-    m_info.m_programThread = std::thread(&Program::run, m_info.m_program.get());
-    m_info.m_programRunning = true;
+    m_info.m_program_thread = std::thread(&program::run, m_info.m_program.get());
+    m_info.m_program_running = true;
 
-    console::log("Program [" + m_info.m_program->getTitle() + "] started!");
+    hc::util::logger::log("program [" + m_info.m_program->get_title() + "] started!");
 
     return 0x00;
 }
 
-uint8_t LightStrip::stopProgram() {
-    if (!m_info.m_programRunning) {
+uint8_t light_strip::stop_program() {
+    if (!m_info.m_program_running) {
         return 0x05;
     }
 
     m_info.m_program->stop();
-    m_info.m_programThread.join();
-    m_info.m_programRunning = false;
+    m_info.m_program_thread.join();
+    m_info.m_program_running = false;
 
-    PWM::resetPins();
+    PWM::reset_pins();
 
     m_info.m_r = 0;
     m_info.m_g = 0;
     m_info.m_b = 0;
 
-    m_realR = 0;
-    m_realG = 0;
-    m_realB = 0;
+    m_real_r = 0;
+    m_real_g = 0;
+    m_real_b = 0;
 
-    console::log("Program [" + m_info.m_program->getTitle() + "] stopped.");
+    hc::util::logger::log("program [" + m_info.m_program->get_title() + "] stopped.");
 
     m_info.m_program.reset();
 
     return 0x00;
 }
 
-uint8_t LightStrip::interruptProgram(const std::vector<uint8_t> data) {
-    if (!m_info.m_programRunning) {
+uint8_t light_strip::interrupt_program(const std::vector<uint8_t> data) {
+    if (!m_info.m_program_running) {
         return 0x05;
     }
 

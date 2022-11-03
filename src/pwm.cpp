@@ -1,18 +1,18 @@
 #include "pwm.h"
 
-#include "console.h"
+#include <homecontroller/util/logger.h>
 
 const unsigned int PWM::PWM_PIN_R = 27;
 const unsigned int PWM::PWM_PIN_G = 22;
 const unsigned int PWM::PWM_PIN_B = 23;
 
-std::mutex PWM::m_mutex;
+std::mutex PWM::_mutex;
 
 std::ofstream PWM::_file;
 bool PWM::_init = false;
 
-bool PWM::init(const std::string& pwmFile) {
-    _file.open(pwmFile);
+bool PWM::init(const std::string& pwm_file) {
+    _file.open(pwm_file);
     if (!_file.is_open()) {
         return false;
     }
@@ -21,52 +21,52 @@ bool PWM::init(const std::string& pwmFile) {
     return true;
 }
 
-void PWM::analogWrite(unsigned int pin, float value) {
+void PWM::analog_write(unsigned int pin, float value) {
     if (!_init) return;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 
     _file << std::to_string(pin) << "=" << std::to_string(value) << "\n";
     _file.flush();
 
     if (!_file.good()) {
-        console::err("Failed to write to pin! (pin " + std::to_string(pin) + ")");
+        hc::util::logger::err("failed to write to pin! (pin " + std::to_string(pin) + ")");
     }
 }
 
-void PWM::resetPins() {
+void PWM::reset_pins() {
     if (!_init) return;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 
     _file << "*=0" << "\n";
     _file.flush();
 
     if (!_file.good()) {
-        console::err("Failed to reset pins!");
+        hc::util::logger::err("failed to reset pins!");
     }
 }
 
-void PWM::releasePin(unsigned int pin) {
+void PWM::release_pin(unsigned int pin) {
     if (!_init) return;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 
     _file << "release " << std::to_string(pin) << "\n";
     _file.flush();
 
     if (!_file.good()) {
-        console::err("Failed to release pin! (pin " + std::to_string(pin) + ")");
+        hc::util::logger::err("failed to release pin! (pin " + std::to_string(pin) + ")");
     }
 }
 
 void PWM::stop() {
     if (!_init) return;
 
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
 
     _file.close();
     if (!_file.good()) {
-        console::err("Failed to shutdown PWM!");
+        hc::util::logger::err("failed to shutdown PWM!");
     }
 }

@@ -2,19 +2,21 @@
 
 #include <iostream>
 
-int main() {
-    LightStrip device;
-    int ec;
+#include <csignal>
+#include <unistd.h>
 
-    if (!device.start()) {
-        ec = -1;
-        std::cout << "Exited with non-zero status code." << std::endl;
-    } else {
-        ec = 0;
-        std::cout << "Exited with zero status code." << std::endl;
+light_strip lights;
+
+int main() {
+    std::signal(SIGINT, [](int s) {
+        lights.shutdown();
+    });
+
+    if (!lights.start()) {
+        std::cout << "exited with non-zero status code." << std::endl;
+        return -1;
     }
 
-    device.cleanup();
-
-    return ec;
+    std::cout << "exited with zero status code." << std::endl;
+    return 0;
 }

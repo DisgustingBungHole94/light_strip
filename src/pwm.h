@@ -7,12 +7,12 @@
 
 class PWM {
     public:
-        static bool init(const std::string& pwmFile);
+        static bool init(const std::string& pwm_file);
 
-        static void analogWrite(unsigned int pin, float value);
+        static void analog_write(unsigned int pin, float value);
 
-        static void resetPins();
-        static void releasePin(unsigned int pin);
+        static void reset_pins();
+        static void release_pin(unsigned int pin);
 
         static void stop();
 
@@ -22,7 +22,7 @@ class PWM {
 
 
     private:
-        static std::mutex m_mutex;
+        static std::mutex _mutex;
 
         static std::ofstream _file;
         static bool _init;

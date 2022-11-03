@@ -6,9 +6,4 @@ LightStrip is a program built with [libhomecontroller](https://github.com/Disgus
 
 ## Build Instructions
 
-Make sure you have [libhomecontroller](https://github.com/DisgustingBungHole94/libhomecontroller) installed.
-
-```sh
-git clone https://github.com/DisgustingBungHole94/light_strip.git
-cd light_strip && make
-```
+Coming soon...
